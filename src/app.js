@@ -8,11 +8,14 @@ let Instrument = 'Aurora5L';
 let custom_unmixing_mtx_fileHandle;
 let custom_csvArray;
 let custom_ChannelNames;
+let inside_unmixing_mtx_fileHandle;
 let inside_csvArray;
 let inside_ChannelNames;
 
 
 let logArray = [];
+
+let directoryHandle;
 
 // select Instrument
 const selectInstrumentElement = document.getElementById('instrument-select');
@@ -34,6 +37,133 @@ document.getElementById('custom-unmixing-file-input').addEventListener('change',
 
 // Read unmixing matrix csv file
 document.getElementById('read-custom-unmixing-file').addEventListener('click', async () => {
+    await readcustomcsv()
+});
+
+
+//to do: update UnmixingMtxModel.csv for various instruments
+//download unmixing-model-file
+document.getElementById('unmixing-model-file-download-button').addEventListener('click', function() {
+    if (Instrument=='Aurora5L'){
+        let model_filename = 'Aurora5LUnmixingMtxModel.csv';
+    }
+    else if(Instrument=='Xenith'){
+        let model_filename = 'Aurora5LUnmixingMtxModel.csv';
+    }
+    else if(Instrument=='CytPix'){
+        let model_filename = 'Aurora5LUnmixingMtxModel.csv';
+    }
+    else if(Instrument=='Fortessa'){
+        let model_filename = 'Aurora5LUnmixingMtxModel.csv';
+    }
+    else if(Instrument=='Custom'){
+        let model_filename = 'Aurora5LUnmixingMtxModel.csv';
+    }
+    const link = document.createElement('a');
+    link.href = 'data/mtx/' + model_filename;
+    link.download = model_filename;
+    link.click();
+});
+
+//Generate fluors
+document.getElementById('generate-fluors-selection').addEventListener('click', async () => {
+    //read inside unmixing matrix file
+    if(Instrument != "Custom"){
+        //read inside unmixing matrix file
+        //await readinsidecsv(); //for official use
+        await readinsidecsv_test(); //for local test
+
+        //compare inside and custom matrix files
+
+
+        //merge inside and custom matrix files
+
+    }
+    //generate fluors selections
+
+
+});
+
+async function readinsidecsv(){
+    
+
+    const filePath = `data/mtx/${Instrument}.csv`;
+    try {
+        const response = await fetch(filePath);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const csvText = await response.text();
+        Papa.parse(csvText, {
+            header: true,
+            complete: function(results) {
+                inside_csvArray = results.data;
+                console.log('inside_csvArray:', inside_csvArray);
+                customLog('inside_csvArray:', inside_csvArray);
+                inside_ChannelNames = results.meta.fields;
+                inside_ChannelNames = inside_ChannelNames.slice(2);
+                console.log('inside_ChannelNames:', inside_ChannelNames);
+                customLog('inside_ChannelNames:', inside_ChannelNames);
+                // check if last row is empty
+                if (inside_csvArray.length > 0 && Object.values(inside_csvArray[inside_csvArray.length - 1]).every(value => value === "")) {
+                    inside_csvArray.pop(); // remove last row
+                }
+            },
+            error: function(error) {
+                console.error('Error parsing CSV:', error);
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching the file:', error);
+    }
+}
+
+//for local test
+async function readinsidecsv_test(){
+    directoryHandle = await window.showDirectoryPicker();
+    for await (const entry of directoryHandle.values()) {
+        if (entry.kind === 'file' && entry.name === `${Instrument}.csv`) {
+            inside_unmixing_mtx_fileHandle = await entry.getFile();
+        }
+    }
+
+    try {
+        if (!inside_unmixing_mtx_fileHandle) {
+            alert('Please select a file first.');
+            return;
+        }
+
+        // Read the file
+        const text = await inside_unmixing_mtx_fileHandle.text();
+        
+        // Parse CSV content using PapaParse
+        Papa.parse(text, {
+            header: true,
+            complete: function(results) {
+                inside_csvArray = results.data;
+                console.log('inside_csvArray:', inside_csvArray);
+                customLog('inside_csvArray:', inside_csvArray);
+                inside_ChannelNames = results.meta.fields;
+                inside_ChannelNames = inside_ChannelNames.slice(2);
+                console.log('inside_ChannelNames:', inside_ChannelNames);
+                customLog('inside_ChannelNames:', inside_ChannelNames);
+                // check if last row is empty
+                if (inside_csvArray.length > 0 && Object.values(inside_csvArray[inside_csvArray.length - 1]).every(value => value === "")) {
+                    inside_csvArray.pop(); // remove last row
+                }
+            },
+            error: function(error) {
+                console.error('Error parsing CSV:', error);
+            }
+        });
+
+    } catch (error) {
+        console.error('Error reading CSV file:', error);
+        customLog('Error reading CSV file:', error);
+    }
+}
+
+async function readcustomcsv(){
     try {
         if (!custom_unmixing_mtx_fileHandle) {
             alert('Please select a file first.');
@@ -68,75 +198,7 @@ document.getElementById('read-custom-unmixing-file').addEventListener('click', a
         console.error('Error reading CSV file:', error);
         customLog('Error reading CSV file:', error);
     }
-});
-
-//to do: update UnmixingMtxModel.csv for various instruments
-//download unmixing-model-file
-document.getElementById('unmixing-model-file-download-button').addEventListener('click', function() {
-    if (Instrument=='Aurora5L'){
-        let model_filename = 'Aurora5LUnmixingMtxModel.csv';
-    }
-    else if(Instrument=='Xenith'){
-        let model_filename = 'Aurora5LUnmixingMtxModel.csv';
-    }
-    else if(Instrument=='CytPix'){
-        let model_filename = 'Aurora5LUnmixingMtxModel.csv';
-    }
-    else if(Instrument=='Fortessa'){
-        let model_filename = 'Aurora5LUnmixingMtxModel.csv';
-    }
-    else if(Instrument=='Custom'){
-        let model_filename = 'Aurora5LUnmixingMtxModel.csv';
-    }
-    const link = document.createElement('a');
-    link.href = 'data/mtx/' + model_filename;
-    link.download = model_filename;
-    link.click();
-});
-
-//Generate fluors
-document.getElementById('generate-fluors-selection').addEventListener('click', async () => {
-    //read inside unmixing matrix file
-    if(Instrument != "Custom"){
-        //read inside unmixing matrix file
-        const filePath = `data/mtx/${Instrument}.csv`;
-        try {
-            const response = await fetch(filePath);
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const csvText = await response.text();
-            Papa.parse(csvText, {
-                header: true,
-                complete: function(results) {
-                    inside_csvArray = results.data;
-                    console.log('inside_csvArray:', inside_csvArray);
-                    customLog('inside_csvArray:', inside_csvArray);
-                    inside_ChannelNames = results.meta.fields;
-                    inside_ChannelNames = inside_ChannelNames.slice(2);
-                    console.log('inside_ChannelNames:', inside_ChannelNames);
-                    customLog('inside_ChannelNames:', inside_ChannelNames);
-                    // check if last row is empty
-                    if (inside_csvArray.length > 0 && Object.values(inside_csvArray[inside_csvArray.length - 1]).every(value => value === "")) {
-                        inside_csvArray.pop(); // remove last row
-                    }
-                },
-                error: function(error) {
-                    console.error('Error parsing CSV:', error);
-                }
-            });
-        } catch (error) {
-            console.error('Error fetching the file:', error);
-        }
-        //compare inside and custom matrix files
-
-        //merge inside and custom matrix files
-
-    }
-    //generate fluors selections
-
-
-});
+}
 
 function customLog(...args) {
     const timestamp = new Date().toISOString(); // get ISO string of current time
