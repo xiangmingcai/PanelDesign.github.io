@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UnmixingMtxGenerator</title>
+    <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+    <div class="basic-div">
+        <h1>Unmixing Matrix Generator (UMG)</h1>
+        <p>(version 1.0)</p>
+        <p>This website is designed to guide users generating the unmixing matrix for flow cytometry analysis. </p>
+        <p>With the UMG, you could select populations and extract signatures for fluors and autofluorescence.</p>
+        <p>If you find this tool helpful, please remember to cite us in your work. <a href="https://github.com/xiangmingcai/UnmixingMtxGenerator.github.io" target="_blank">View this project on GitHub</a></p>
+        <p>🔍<a href="https://github.com/xiangmingcai/UnmixingMtxGenerator.github.io/blob/main/instruction.md" target="_blank">instruction document</a> </p>
+        <p>Enjoy! 😉</p>
+    </div>
+    <!-- Step 1 Inital setting and Import files -->
+    <!-- Select Data Folder and UnmixMatrix CSV file -->
+    <div class="basic-div">
+        <div>
+            <h2>Step 1 Setup</h2>
+            <p>Select a data folder where you keep fcs files</p>
+            <button id="select-folder">Select Data Folder</button>
+            <p id="folder-name" class = "small-gray-text"></p>
+            <p>Select a UnmixMatrix File</p>
+            <input type="file" id="file-input" >
+            <p id="file-name" class = "small-gray-text"></p>
+            <!-- Read UnmixMatrix CSV file -->
+            <button id="read-csv">Read the UnmixMatrix CSV</button>
+            <button id="no-csv">I do not have the UnmixMatrix CSV</button>
+        </div>
+
+        <div class = "table-container">
+            <div id="csv-table"></div>
+        </div>
+
+        <div>
+            <!-- Set Primary and Secondary Siagnature name -->
+            <div id="new-sig-setup-div" style="display:none;">
+                <label for="primaryName">Primary Name:</label>
+                <input type="text" id="primaryName" name="primaryName">
+                <label for="secondaryName">Secondary Name:</label>
+                <input type="text" id="secondaryName" name="secondaryName">
+                <button id="new-sig-setup-submit-button">Submit New Signature Names</button>
+                <p id="new-sig-setup-submit-message"></p>
+            </div>
+        </div>   
+    </div>
+
+    <!-- Step 2 Select positive and negative population -->
+    <div class="basic-div">
+        <h2>Step 2 Select positive population and negative population (if need)</h2>
+        <div id="scc-file-setup-div" style="display:none;">
+            <!-- Select scc fcs file -->
+            <p>Select a single-color control File</p>
+            <select id="file-dropdown"></select>
+            <p id="file-dropdown-name" class = "small-gray-text"></p>
+            <!-- Select subset method -->
+            <div class="subset-method-selection-container">
+                <div class="subset-box">
+                    <label>
+                        <input type="radio" name="subset-method" value="random" checked> Random Subset
+                    </label>
+                </div>
+                <div class="subset-box">
+                    <label>
+                        <input type="radio" name="subset-method" value="peak_channel"> Max Subset by peak channel
+                    </label>
+                    <button id="channel-fetch-button">Fetch channels</button>
+                    <p id="channel-fetch-reminder"></p>
+                    <p>Select a peak channel</p>
+                    <select id="channel-dropdown"></select>
+                    <p>Note: the automaticly selected peak channel is not reliable! Please check it!</p>
+                </div>
+            </div>
+            <div>
+                <p id="subset-size-reminder" >Enter subset size: </p>
+                <input type="number" id="subset-size" value="50000" step="1" >
+            </div>
+
+            <!-- Read fcs file-->
+            <button id="file-reading-button">Read fcs file</button>
+            <div id="file-reading-button-reminder-div" style="display:none;">
+                <p id="file-reading-reminder">Please wait while reading and processing... </p>
+                <p id="file-reading-worrying1"></p>
+                <p id="file-reading-worrying2"></p>
+                <p id="file-reading-worrying3"></p>
+                <p id="file-reading-worrying4"></p>
+                <p id="file-reading-worrying5"></p>
+                <p id="file-reading-worrying6"></p>
+            </div>
+        </div>
+        <div id="scatter-plot-setup-div" style="display:none;">
+            <div>
+                <!-- Select x and y axes -->
+                <p id="x-dropdown-select-reminder">Select x axis</p>
+                <select id="x-dropdown" ></select>
+                <p id="y-dropdown-select-reminder">Select y axis</p>
+                <select id="y-dropdown"></select>
+                <!-- Select cell numbers for scatter plot -->
+                <p id="plotset-size-input-reminder">Please set the cell counts for plot</p>
+                <input type="number" id="plotset-size-input" placeholder="Enter Plotset size">
+                <!-- Create Scatter plot -->
+                <button id="plot-button">Create Scatter plot</button>
+                <button id="replot-button">Re-plot with gated cells</button>
+                <p id="plot-reminder"></p>
+                <div id="plot"></div>
+                <p id="selected-reminder"></p>
+            </div>
+        </div>
+        <div id="scatter-plot-canvas-div">
+        </div>
+    </div>
+    
+    <!-- Step 3 Select populations and generate signature -->
+    <div class="basic-div">
+        <h2>Step 3 Select populations and generate signature</h2>
+        <div id="set-population-div" style="display:none;">
+            <!-- Select mode -->
+            <label>
+                <input type="radio" name="sig-method" value="PN" checked> Positive population - Negative population
+            </label>
+            <label>
+                <input type="radio" name="sig-method" value="AF"> Only positive populaiton (Autofluorescence)
+            </label>
+
+            <!-- Select positive and negative population, if need -->
+            <div id="set-positive-div">
+                <button id="set-positive-button">Set selected cells as posotive population</button>
+                <p id="set-positive-reminder" class = "small-gray-text"></p>
+            </div>
+            <div id="set-negative-div">
+                <button id="set-negative-button">Set selected cells as negative population, if need</button>
+                <p id="set-negative-reminder" class = "small-gray-text"></p>
+            </div>
+            <!-- Select channels, if no csv file -->
+            <div id="multi-channels-div">
+                <label>Please select all channels for signature:</label>
+                <div id="checkbox-container"></div>
+            </div>
+            <p id="multi-channels-dropdown-reminder" class = "small-gray-text"></p>
+
+        </div>
+
+        <div id="calculate-sig-div" style="display:none;">
+            <button id="calculation-button">Calculate signature when you are ready!</button>
+            <p id="calculation-button-reminder" class = "small-gray-text"></p>
+
+            <div id="plot-sig-canvas-div">
+                <div id="plotly-linechart-pos" style="display:none;"></div>
+                <div id="plotly-linechart-neg" style="display:none;"></div>
+                <div id="plotly-linechart-final" style="display:none;"></div>
+            </div>
+
+        </div>
+    </div>    
+
+    <!-- Step 4 Save Unmixing matrix with new signature-->
+    <div class="basic-div">
+        <h2>Step 4 Save Unmixing matrix with new signature</h2>
+        <div id="save-button-div" style="display: none;">
+            <div>
+                <label for="normalization-dropdown">Set Normalization strategy when saving new signature:</label>
+                <select id="normalization-dropdown">
+                    <option value="1" selected>Normalize to 1</option>
+                    <option value="100" >Normalize to 100</option>
+                    <option value="0">No normalization</option>
+                </select>
+            </div>
+            <button id="save-button" >Save Unmixing matrix</button>
+            <button id="export-log-button" >Save log</button>
+        </div>
+        
+    </div>
+
+ 
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+
+    <footer>
+        <p>&copy; 2025 XiangmingCai. All rights reserved.</p>
+    </footer>
+    <script src="dist/bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    
+</body>
+</html>

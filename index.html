@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UnmixingMtxGenerator</title>
+    <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+    <div class="basic-div">
+        <h1>Panel Design</h1>
+        <p>This website is designed to ... </p>
+        
+    </div>
+    <!-- Step 1 Set up -->
+    
+    <div class="basic-div">
+        <h2>Step 1 Setup</h2>
+        <!-- Select Instrument -->
+        <div>
+            <label for="instrument-select">Choose an instrument:</label>
+            <select id="instrument-select">
+                <option value="Aurora5L" selected>Aurora5L</option>
+                <option value="Xenith">Xenith</option>
+                <option value="CytPix">CytPix</option>
+                <option value="Fortessa">Fortessa</option>
+                <option value="Custom">Custom</option>
+            </select>
+        </div>
+        
+        <!-- Custom unmixing matrix submit -->
+        <div>
+            <p>Submit custom unmixing matrix file, if needed:</p>
+            <input type="file" id="custom-unmixing-file-input" >
+            <p id="custom-unmixing-file-name" class = "small-gray-text"></p>
+            <button id="read-custom-unmixing-file">Read the UnmixMatrix CSV</button>
+            <br>
+            <!-- Reminder: Unmixing matrix model file download or link to UMG-->
+            <p class="hint-box">
+                Click the button to download the model unmixing matrix file: <button id="unmixing-model-file-download-button" class="button-hint">Download CSV</button> 
+                <br>
+                You may also use <a href="https://github.com/xiangmingcai/UnmixingMtxGenerator.github.io" target="_blank">UnmixingMtxGenerator</a> to generate the unmixing matrix yourself.
+            </p>
+        </div>
+        
+
+        <!-- Fluors selection-->
+        <div>
+            <button id="generate-fluors-selection">Generate fluors</button>
+        </div>
+
+        <!-- fcs file match, if Custom instrument or added Custom unmixing matrix-->
+
+
+        <!-- channels selection, if Custom instrument-->
+
+
+    </div>
+    <!-- Step 2 Select raw Channels and unmixed Channels-->
+    
+
+ 
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+
+    <footer>
+        <p>&copy; 2025 Amsterdam UMC. All rights reserved.</p>
+    </footer>
+    <script src="dist/bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    
+</body>
+</html>
