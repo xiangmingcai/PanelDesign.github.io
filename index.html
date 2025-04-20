@@ -32,7 +32,7 @@
             <input type="file" id="custom-unmixing-file-input" >
             <p id="custom-unmixing-file-name" class = "small-gray-text"></p>
             <button id="read-custom-unmixing-file">Read the UnmixMatrix CSV</button>
-            <br>
+            <p id="read-custom-unmixing-file-reminder" class = "small-gray-text"></p>
             <!-- Reminder: Unmixing matrix model file download or link to UMG-->
             <p class="hint-box">
                 Click the button to download the model unmixing matrix file: <button id="unmixing-model-file-download-button" class="button-hint">Download CSV</button> 
@@ -45,10 +45,28 @@
         <!-- Fluors selection-->
         <div>
             <button id="generate-fluors-selection">Generate fluors</button>
+            <p id="custom_csvArray-check" class = "small-gray-text"></p>
+            <p id="matrix-compare-check-fluors-primary" class = "small-gray-text"></p>
+            <p id="matrix-compare-check-fluors-secondary" class = "small-gray-text"></p>
+            <p id="matrix-compare-check-channels-missing" class = "small-gray-text"></p>
+            <p id="matrix-compare-check-channels-extra" class = "small-gray-text"></p>
+            <div id="fluors-selection-div" style="display:none;">
+                    <div class="checkbox-container" id="checkbox-container">
+                    </div>
+                    <p>You may paste Secondary names here to do multiple selection. (one name per row)</p>
+                    <div class="input-container">
+                        <textarea id="fluor-input" rows="5" cols="50"></textarea>
+                        <button id="parse-input-fluor-names-text-botton">parse Input</button>
+                    </div>
+                    <p id="fluors-selection-reminder"></p>
+            </div>
         </div>
 
         <!-- fcs file match, if Custom instrument or added Custom unmixing matrix-->
+        <div>
+            
 
+        </div>
 
         <!-- channels selection, if Custom instrument-->
 

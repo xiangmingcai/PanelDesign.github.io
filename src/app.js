@@ -8,12 +8,22 @@ let Instrument = 'Aurora5L';
 let custom_unmixing_mtx_fileHandle;
 let custom_csvArray;
 let custom_ChannelNames;
+let custom_Primary_fluors;
+let custom_Secondary_fluors;
 let inside_unmixing_mtx_fileHandle;
 let inside_csvArray;
 let inside_ChannelNames;
-
-
+let inside_Primary_fluors;
+let inside_Secondary_fluors;
 let logArray = [];
+let matrixCompare_check = false;
+
+let merged_csvArray;
+let merged_Primary_fluors;
+let merged_Secondary_fluors;
+let merged_ChannelNames;
+let checkboxContainer;
+let selectedIndices = [];
 
 let directoryHandle;
 
@@ -67,26 +77,85 @@ document.getElementById('unmixing-model-file-download-button').addEventListener(
 
 //Generate fluors
 document.getElementById('generate-fluors-selection').addEventListener('click', async () => {
-    //read inside unmixing matrix file
-    if(Instrument != "Custom"){
+    if (Instrument == 'Custom') {
+        if (custom_csvArray && custom_csvArray.length > 0) {
+            document.getElementById("custom_csvArray-check").innerText = ``;
+            merged_csvArray = [...custom_csvArray];
+            merged_Primary_fluors = [...custom_Primary_fluors];
+            merged_Secondary_fluors = [...custom_Secondary_fluors];
+            merged_ChannelNames = [...custom_ChannelNames];
+            console.log("merged_csvArray: ", merged_csvArray);
+            console.log("merged_Primary_fluors: ", merged_Primary_fluors);
+            console.log("merged_Secondary_fluors: ", merged_Secondary_fluors);
+            console.log("merged_ChannelNames: ", merged_ChannelNames);
+            matrixCompare_check = true;
+        } else {
+            //error submit custom_csvArray first
+            document.getElementById("custom_csvArray-check").innerText = `Please submit custom unmixing matrix file first.`;
+            matrixCompare_check = false;
+        }
+    } else {
         //read inside unmixing matrix file
         //await readinsidecsv(); //for official use
         await readinsidecsv_test(); //for local test
 
         //compare inside and custom matrix files
-
+        if (custom_csvArray && custom_csvArray.length > 0) {
+            matrixCompare_check = false;
+            matrixCompare();
+        } else {
+            matrixCompare_check = true;
+        }
+        customLog('matrixCompare_check:', matrixCompare_check);
 
         //merge inside and custom matrix files
-
+        if (custom_csvArray && custom_csvArray.length > 0) {
+            if (matrixCompare_check) {
+                merged_csvArray = [...inside_csvArray, ...custom_csvArray];
+                merged_Primary_fluors = [...inside_Primary_fluors, ...custom_Primary_fluors];
+                merged_Secondary_fluors = [...inside_Secondary_fluors, ...custom_Secondary_fluors];
+                merged_ChannelNames = [...inside_ChannelNames];
+            }
+            console.log("merged_csvArray: ", merged_csvArray);
+            console.log("merged_Primary_fluors: ", merged_Primary_fluors);
+            console.log("merged_Secondary_fluors: ", merged_Secondary_fluors);
+            console.log("merged_ChannelNames: ", merged_ChannelNames);
+        } else {
+            merged_csvArray = [...inside_csvArray];
+            merged_Primary_fluors = [...inside_Primary_fluors];
+            merged_Secondary_fluors = [...inside_Secondary_fluors];
+            merged_ChannelNames = [...inside_ChannelNames];
+            console.log("merged_csvArray: ", merged_csvArray);
+            console.log("merged_Primary_fluors: ", merged_Primary_fluors);
+            console.log("merged_Secondary_fluors: ", merged_Secondary_fluors);
+            console.log("merged_ChannelNames: ", merged_ChannelNames);
+        }
     }
-    //generate fluors selections
 
+    //generate fluors selections
+    if (matrixCompare_check) {
+        checkboxContainer = document.getElementById('checkbox-container');
+        checkboxContainer.innerHTML = ''; 
+        merged_Secondary_fluors.forEach((fluor, index) => {
+            const label = document.createElement('label');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = index;
+            checkbox.addEventListener('change', updateSelectedIndices);
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(fluor));
+            const checkboxItem = document.createElement('div');
+            checkboxItem.className = 'checkbox-item';
+            checkboxItem.appendChild(label);
+            checkboxContainer.appendChild(checkboxItem);
+        });
+        document.getElementById('fluors-selection-div').style.display = 'block';
+    }
 
 });
 
 async function readinsidecsv(){
     
-
     const filePath = `data/mtx/${Instrument}.csv`;
     try {
         const response = await fetch(filePath);
@@ -98,16 +167,23 @@ async function readinsidecsv(){
             header: true,
             complete: function(results) {
                 inside_csvArray = results.data;
+                // check if last row is empty
+                if (inside_csvArray.length > 0 && Object.values(inside_csvArray[inside_csvArray.length - 1]).every(value => value === "")) {
+                    inside_csvArray.pop(); // remove last row
+                }
                 console.log('inside_csvArray:', inside_csvArray);
                 customLog('inside_csvArray:', inside_csvArray);
                 inside_ChannelNames = results.meta.fields;
                 inside_ChannelNames = inside_ChannelNames.slice(2);
                 console.log('inside_ChannelNames:', inside_ChannelNames);
                 customLog('inside_ChannelNames:', inside_ChannelNames);
-                // check if last row is empty
-                if (inside_csvArray.length > 0 && Object.values(inside_csvArray[inside_csvArray.length - 1]).every(value => value === "")) {
-                    inside_csvArray.pop(); // remove last row
-                }
+                inside_Primary_fluors = inside_csvArray.map(item => item.Primary)
+                inside_Secondary_fluors = inside_csvArray.map(item => item.Secondary)
+                console.log('inside_Primary_fluors:', inside_Primary_fluors);
+                customLog('inside_Primary_fluors:', inside_Primary_fluors);
+                console.log('inside_Secondary_fluors:', inside_Secondary_fluors);
+                customLog('inside_Secondary_fluors:', inside_Secondary_fluors);
+                
             },
             error: function(error) {
                 console.error('Error parsing CSV:', error);
@@ -141,16 +217,23 @@ async function readinsidecsv_test(){
             header: true,
             complete: function(results) {
                 inside_csvArray = results.data;
+                // check if last row is empty
+                if (inside_csvArray.length > 0 && Object.values(inside_csvArray[inside_csvArray.length - 1]).every(value => value === "")) {
+                    inside_csvArray.pop(); // remove last row
+                }
                 console.log('inside_csvArray:', inside_csvArray);
                 customLog('inside_csvArray:', inside_csvArray);
                 inside_ChannelNames = results.meta.fields;
                 inside_ChannelNames = inside_ChannelNames.slice(2);
                 console.log('inside_ChannelNames:', inside_ChannelNames);
                 customLog('inside_ChannelNames:', inside_ChannelNames);
-                // check if last row is empty
-                if (inside_csvArray.length > 0 && Object.values(inside_csvArray[inside_csvArray.length - 1]).every(value => value === "")) {
-                    inside_csvArray.pop(); // remove last row
-                }
+                inside_Primary_fluors = inside_csvArray.map(item => item.Primary)
+                inside_Secondary_fluors = inside_csvArray.map(item => item.Secondary)
+                console.log('inside_Primary_fluors:', inside_Primary_fluors);
+                customLog('inside_Primary_fluors:', inside_Primary_fluors);
+                console.log('inside_Secondary_fluors:', inside_Secondary_fluors);
+                customLog('inside_Secondary_fluors:', inside_Secondary_fluors);
+                
             },
             error: function(error) {
                 console.error('Error parsing CSV:', error);
@@ -178,27 +261,106 @@ async function readcustomcsv(){
             header: true,
             complete: function(results) {
                 custom_csvArray = results.data;
-                console.log('custom_csvArray:', custom_csvArray);
-                customLog('custom_csvArray:', custom_csvArray);
-                custom_ChannelNames = results.meta.fields;
-                custom_ChannelNames = custom_ChannelNames.slice(2);
-                console.log('custom_ChannelNames:', custom_ChannelNames);
-                customLog('custom_ChannelNames:', custom_ChannelNames);
                 // check if last row is empty
                 if (custom_csvArray.length > 0 && Object.values(custom_csvArray[custom_csvArray.length - 1]).every(value => value === "")) {
                     custom_csvArray.pop(); // remove last row
                 }
+                console.log('custom_csvArray:', custom_csvArray);
+                customLog('custom_csvArray:', custom_csvArray);
+                custom_ChannelNames = results.meta.fields;
+                custom_ChannelNames = custom_ChannelNames.slice(2);
+                custom_Primary_fluors = custom_csvArray.map(item => item.Primary)
+                custom_Secondary_fluors = custom_csvArray.map(item => item.Secondary)
+                console.log('custom_Primary_fluors:', custom_Primary_fluors);
+                customLog('custom_Primary_fluors:', custom_Primary_fluors);
+                console.log('custom_Secondary_fluors:', custom_Secondary_fluors);
+                customLog('custom_Secondary_fluors:', custom_Secondary_fluors);
+                console.log('custom_ChannelNames:', custom_ChannelNames);
+                customLog('custom_ChannelNames:', custom_ChannelNames);
+                
             },
             error: function(error) {
                 console.error('Error parsing CSV:', error);
             }
         });
 
+        document.getElementById("read-custom-unmixing-file-reminder").innerText = "csv file read."
+
     } catch (error) {
         console.error('Error reading CSV file:', error);
         customLog('Error reading CSV file:', error);
     }
 }
+
+function matrixCompare(){
+    //compare primaryFluor
+    let conflicts_Primary_fluors = custom_Primary_fluors.filter(fluor => inside_Primary_fluors.includes(fluor));
+    console.log('conflicts_Primary_fluors:', conflicts_Primary_fluors);
+    if (conflicts_Primary_fluors.length > 0) {
+        document.getElementById("matrix-compare-check-fluors-primary").innerText = `Conflicting primary name found: ${conflicts_Primary_fluors.join(', ')}. Please adjust first.`;
+    } else {
+        document.getElementById("matrix-compare-check-fluors-primary").innerText = `All fluor primary names checked.`;
+    }
+    //compare seconodaryFluor
+    let conflicts_Secondary_fluors = custom_Secondary_fluors.filter(fluor => inside_Secondary_fluors.includes(fluor));
+    console.log('conflicts_Secondary_fluors:', conflicts_Secondary_fluors);
+    if (conflicts_Secondary_fluors.length > 0) {
+        document.getElementById("matrix-compare-check-fluors-secondary").innerText = `Conflicting secondary name found: ${conflicts_Secondary_fluors.join(', ')}. Please adjust first.`;
+    } else {
+        document.getElementById("matrix-compare-check-fluors-secondary").innerText = `All fluor secondary names checked.`;
+    }
+    //compare channels
+    let missingChannels = inside_ChannelNames.filter(channel => !custom_ChannelNames.includes(channel));
+    let extraChannels = custom_ChannelNames.filter(channel => !inside_ChannelNames.includes(channel));
+    if (missingChannels.length > 0 || extraChannels.length > 0) {
+        if (missingChannels.length > 0){
+            document.getElementById("matrix-compare-check-channels-missing").innerText = `Missing channels found: ${missingChannels.join(', ')}. Please check first.`;
+        }
+        if (extraChannels.length > 0){
+            document.getElementById("matrix-compare-check-channels-extra").innerText = `Extra channels found: ${extraChannels.join(', ')}. Please check first.`;
+        }
+    } else {
+        document.getElementById("matrix-compare-check-channels-missing").innerText ="";
+        document.getElementById("matrix-compare-check-channels-extra").innerText ="All channel names checked.";
+    }
+
+    if (conflicts_Primary_fluors.length == 0 && conflicts_Secondary_fluors.length == 0 && missingChannels.length == 0 && extraChannels.length == 0){
+        matrixCompare_check = true;
+    }
+}
+
+
+// update selectedIndices
+ function updateSelectedIndices() {
+    selectedIndices = [];
+    const checkboxes = checkboxContainer.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+    if (checkbox.checked) {
+        selectedIndices.push(parseInt(checkbox.value));
+    }
+    });
+    document.getElementById('fluors-selection-reminder').innerText = `A total of ${selectedIndices.length} fluors were selected.`
+    customLog('selectedIndices:', selectedIndices);
+}
+
+// parse input fluors names text and check checkbox
+document.getElementById('parse-input-fluor-names-text-botton').addEventListener('click', parseInput);
+function parseInput() {
+    const inputText = document.getElementById('fluor-input').value;
+    const inputLines = inputText.split('\n');
+    const checkboxes = checkboxContainer.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false; // unselect all checkbox
+    });
+    inputLines.forEach(line => {
+        const index = merged_Secondary_fluors.indexOf(line.trim());
+        if (index !== -1) {
+        checkboxes[index].checked = true;
+        }
+    });
+    updateSelectedIndices();
+}
+    
 
 function customLog(...args) {
     const timestamp = new Date().toISOString(); // get ISO string of current time

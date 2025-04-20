@@ -117,6 +117,19 @@ table tr:hover {
   height: 200px;
 }
 
+.checkbox-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.checkbox-item {
+  flex: 1 1 200px; /* 每个复选框项的最小宽度为200px */
+}
+
+.input-container {
+  margin-bottom: 20px;
+}
+
 .selection-container {
   display: flex;
   justify-content: space-between;
