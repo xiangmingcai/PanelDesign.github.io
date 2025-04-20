@@ -24,6 +24,13 @@ let merged_Secondary_fluors;
 let merged_ChannelNames;
 let checkboxContainer;
 let selectedIndices = [];
+let selected_Secondary_fluors;
+let selected_Primary_fluors;
+let selected_ChannelNames;
+let fluor_fcs_pairs = [];
+let selected_custom_Secondary_fluors;
+let customfileInputContainer;
+
 
 let directoryHandle;
 
@@ -131,6 +138,7 @@ document.getElementById('generate-fluors-selection').addEventListener('click', a
             console.log("merged_ChannelNames: ", merged_ChannelNames);
         }
     }
+    
 
     //generate fluors selections
     if (matrixCompare_check) {
@@ -329,9 +337,8 @@ function matrixCompare(){
     }
 }
 
-
 // update selectedIndices
- function updateSelectedIndices() {
+function updateSelectedIndices() {
     selectedIndices = [];
     const checkboxes = checkboxContainer.querySelectorAll('input[type="checkbox"]');
     checkboxes.forEach(checkbox => {
@@ -360,7 +367,113 @@ function parseInput() {
     });
     updateSelectedIndices();
 }
+// confirm fluors selection, match custom fcs file and select channels
+document.getElementById('confirm-fluors-selection').addEventListener('click', async () => {
+    selected_Primary_fluors = selectedIndices.map(index => merged_Primary_fluors[index])
+    selected_Secondary_fluors = selectedIndices.map(index => merged_Secondary_fluors[index])
+    console.log("selected_Primary_fluors: ",selected_Primary_fluors);
+    console.log("selected_Secondary_fluors: ",selected_Secondary_fluors);
+    //select channels
+    selected_ChannelNames = [...merged_ChannelNames];
+
+    //generate fluor_fcs_pairs to store Indice, Primary, Secondary, fcs_address for each selected fluor
+    selectedIndices.forEach(index => {
+        const fluor_fcs_pair = {
+        Indice: index,
+        Primary: merged_Primary_fluors[index],
+        Secondary: merged_Secondary_fluors[index],
+        custom: false,
+        fcs_address: `data/fcs/${merged_Primary_fluors[index]}.fcs`,
+        fcs_Array: null
+        };
+        fluor_fcs_pairs.push(fluor_fcs_pair);
+    });
     
+    //match custom fcs file
+    if (custom_csvArray && custom_csvArray.length > 0) {
+        // check if any selected_Secondary_fluors are in custom_Secondary_fluors
+        selected_custom_Secondary_fluors = selected_Secondary_fluors.filter(fluor => custom_Secondary_fluors.includes(fluor));
+        //if so, empty the fcs_address value of corresponding fluor in fluor_fcs_pairs
+        fluor_fcs_pairs.forEach(pair => {
+            if (selected_custom_Secondary_fluors.includes(pair.Secondary)) {
+                pair.custom = true; 
+                pair.fcs_address = ""; 
+            }
+        });
+    }
+    console.log("fluor_fcs_pairs: ",fluor_fcs_pairs);
+    
+    // generate file input container and read fcs from custom fluors
+    if (selected_custom_Secondary_fluors.length > 0) {
+        customfileInputContainer = document.getElementById('custom-fcs-file-input-container');
+        customfileInputContainer.innerHTML = ''; 
+        selected_custom_Secondary_fluors.forEach((fluor, index) => {
+            const fileInputLabel = document.createElement('label');
+            fileInputLabel.textContent = `Select fcs file for ${fluor}: `;
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.addEventListener('change', (event) => handleCustomFCSFileInputChange(event, fluor));
+            const fileInputItem = document.createElement('div');
+            fileInputItem.appendChild(fileInputLabel);
+            fileInputItem.appendChild(fileInput);
+            customfileInputContainer.appendChild(fileInputItem);
+        });
+    }
+
+
+});
+
+function handleCustomFCSFileInputChange(event, fluor) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            //import fcs file
+            let arrayBuffer = e.target.result;
+            customLog("arrayBuffer: ", "finished.");
+            
+            let buffer = Buffer.from(arrayBuffer);
+            arrayBuffer = null //remove arrayBuffer
+            customLog("buffer: ", "finished.");
+            
+            let fcs = new FCS({ dataFormat: 'asNumber', eventsToRead: 10000}, buffer);
+            buffer = null //remove buffer
+            customLog("fcs: ", "finished.");
+            
+            //find columnNames
+            const text = fcs.text;
+            const columnNames = [];
+            //columnNames are stored in `$P${i}S` in Xenith
+            for (let i = 1; text[`$P${i}S`]; i++) {
+                columnNames.push(text[`$P${i}S`]);
+            }
+            //columnNames are stored in `$P${i}N` in Aurora
+            if (columnNames.length == 0) {
+                for (let i = 1; text[`$P${i}N`]; i++) {
+                    columnNames.push(text[`$P${i}N`]);
+                }
+            }
+            //check if all selected_ChannelNames are in columnNames, if not, report on webpage
+
+            //extract fcsArray
+            let fcsArray = fcs.dataAsNumbers; 
+            fcs = null;
+
+            let rowIndices = selected_ChannelNames.map(name => columnNames.indexOf(name));
+            fcsArray = fcsArray.map(row => rowIndices.map(index => row[index]));
+            fcsArray = transpose(fcsArray);
+
+            //store fcsArray in fluor_fcs_pairs
+            const pairIndex = fluor_fcs_pairs.findIndex(pair => pair.Secondary === fluor);
+            if (pairIndex !== -1) {
+                fluor_fcs_pairs[pairIndex].fcs_Array = fcsArray;
+                console.log("updated fluor_fcs_pairs: ",fluor_fcs_pairs);
+            }
+
+        }
+        reader.readAsArrayBuffer(file);
+    }
+}
 
 function customLog(...args) {
     const timestamp = new Date().toISOString(); // get ISO string of current time

@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UnmixingMtxGenerator</title>
+    <title>Panel Designer</title>
     <link rel="stylesheet" href="src/styles.css">
 </head>
 <body>
     <div class="basic-div">
-        <h1>Panel Design</h1>
+        <h1>Panel Designer</h1>
         <p>This website is designed to ... </p>
     </div>
     <!-- Step 1 Set up -->
@@ -51,21 +51,22 @@
             <p id="matrix-compare-check-channels-missing" class = "small-gray-text"></p>
             <p id="matrix-compare-check-channels-extra" class = "small-gray-text"></p>
             <div id="fluors-selection-div" style="display:none;">
-                    <div class="checkbox-container" id="checkbox-container">
-                    </div>
-                    <p>You may paste Secondary names here to do multiple selection. (one name per row)</p>
-                    <div class="input-container">
-                        <textarea id="fluor-input" rows="5" cols="50"></textarea>
-                        <button id="parse-input-fluor-names-text-botton">parse Input</button>
-                    </div>
-                    <p id="fluors-selection-reminder"></p>
+                <div class="checkbox-container" id="checkbox-container">
+                </div>
+                <p>You may paste Secondary names here to do multiple selection. (one name per row)</p>
+                <div class="input-container">
+                    <textarea id="fluor-input" rows="5" cols="50"></textarea>
+                    <button id="parse-input-fluor-names-text-botton">parse Input</button>
+                </div>
+                <p id="fluors-selection-reminder"></p>
+                <button id="confirm-fluors-selection">Confirm fluors</button>
             </div>
         </div>
 
         <!-- fcs file match, if Custom instrument or added Custom unmixing matrix-->
         <div>
-            
-
+            <div class="fcs-file-input-container" id="custom-fcs-file-input-container">
+            </div>
         </div>
 
         <!-- channels selection, if Custom instrument-->

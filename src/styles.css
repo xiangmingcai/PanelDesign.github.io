@@ -130,6 +130,10 @@ table tr:hover {
   margin-bottom: 20px;
 }
 
+.fcs-file-input-container {
+  margin-top: 20px;
+}
+  
 .selection-container {
   display: flex;
   justify-content: space-between;
