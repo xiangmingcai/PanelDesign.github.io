@@ -22,15 +22,16 @@ let merged_csvArray;
 let merged_Primary_fluors;
 let merged_Secondary_fluors;
 let merged_ChannelNames;
-let checkboxContainer;
+let checkboxFluorsContainer;
+let checkboxChannelsContainer;
 let selectedIndices = [];
 let selected_Secondary_fluors;
 let selected_Primary_fluors;
-let selected_ChannelNames;
+let selected_ChannelNames = [];
 let fluor_fcs_pairs = [];
 let selected_custom_Secondary_fluors;
 let customfileInputContainer;
-
+let use_all_channel = true;
 
 let directoryHandle;
 
@@ -142,23 +143,26 @@ document.getElementById('generate-fluors-selection').addEventListener('click', a
 
     //generate fluors selections
     if (matrixCompare_check) {
-        checkboxContainer = document.getElementById('checkbox-container');
-        checkboxContainer.innerHTML = ''; 
+        checkboxFluorsContainer = document.getElementById('fluors-checkbox-container');
+        checkboxFluorsContainer.innerHTML = ''; 
         merged_Secondary_fluors.forEach((fluor, index) => {
             const label = document.createElement('label');
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.value = index;
-            checkbox.addEventListener('change', updateSelectedIndices);
+            checkbox.addEventListener('change', updateSelectedFluorIndices);
             label.appendChild(checkbox);
             label.appendChild(document.createTextNode(fluor));
             const checkboxItem = document.createElement('div');
             checkboxItem.className = 'checkbox-item';
             checkboxItem.appendChild(label);
-            checkboxContainer.appendChild(checkboxItem);
+            checkboxFluorsContainer.appendChild(checkboxItem);
         });
         document.getElementById('fluors-selection-div').style.display = 'block';
     }
+    //set default selected_ChannelNames
+    selected_ChannelNames = [...merged_ChannelNames]
+    console.log('selected_ChannelNames:', selected_ChannelNames);
 
 });
 
@@ -337,10 +341,10 @@ function matrixCompare(){
     }
 }
 
-// update selectedIndices
-function updateSelectedIndices() {
+// update selected Fluor Indices
+function updateSelectedFluorIndices() {
     selectedIndices = [];
-    const checkboxes = checkboxContainer.querySelectorAll('input[type="checkbox"]');
+    const checkboxes = checkboxFluorsContainer.querySelectorAll('input[type="checkbox"]');
     checkboxes.forEach(checkbox => {
     if (checkbox.checked) {
         selectedIndices.push(parseInt(checkbox.value));
@@ -355,7 +359,7 @@ document.getElementById('parse-input-fluor-names-text-botton').addEventListener(
 function parseInput() {
     const inputText = document.getElementById('fluor-input').value;
     const inputLines = inputText.split('\n');
-    const checkboxes = checkboxContainer.querySelectorAll('input[type="checkbox"]');
+    const checkboxes = checkboxFluorsContainer.querySelectorAll('input[type="checkbox"]');
     checkboxes.forEach(checkbox => {
         checkbox.checked = false; // unselect all checkbox
     });
@@ -365,7 +369,7 @@ function parseInput() {
         checkboxes[index].checked = true;
         }
     });
-    updateSelectedIndices();
+    updateSelectedFluorIndices();
 }
 // confirm fluors selection, match custom fcs file and select channels
 document.getElementById('confirm-fluors-selection').addEventListener('click', async () => {
@@ -373,8 +377,10 @@ document.getElementById('confirm-fluors-selection').addEventListener('click', as
     selected_Secondary_fluors = selectedIndices.map(index => merged_Secondary_fluors[index])
     console.log("selected_Primary_fluors: ",selected_Primary_fluors);
     console.log("selected_Secondary_fluors: ",selected_Secondary_fluors);
-    //select channels
-    selected_ChannelNames = [...merged_ChannelNames];
+    
+    //initial empty fluor_fcs_pairs
+    fluor_fcs_pairs = [];
+    document.getElementById('custom-fcs-file-input-container').innerHTML = ''; 
 
     //generate fluor_fcs_pairs to store Indice, Primary, Secondary, fcs_address for each selected fluor
     selectedIndices.forEach(index => {
@@ -413,13 +419,17 @@ document.getElementById('confirm-fluors-selection').addEventListener('click', as
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
             fileInput.addEventListener('change', (event) => handleCustomFCSFileInputChange(event, fluor));
+            const fileCheck = document.createElement('p');
             const fileInputItem = document.createElement('div');
             fileInputItem.appendChild(fileInputLabel);
             fileInputItem.appendChild(fileInput);
+            fileInputItem.appendChild(fileCheck);
             customfileInputContainer.appendChild(fileInputItem);
         });
     }
 
+    // show 
+    document.getElementById('panel-evaluation-button-div').style.display = 'block';
 
 });
 
@@ -454,6 +464,14 @@ function handleCustomFCSFileInputChange(event, fluor) {
                 }
             }
             //check if all selected_ChannelNames are in columnNames, if not, report on webpage
+            
+            const missingChannels = selected_ChannelNames.filter(name => !columnNames.includes(name));
+            const fileCheck = event.target.nextElementSibling;
+            if (missingChannels.length > 0) {
+                fileCheck.textContent = `Missing channels: ${missingChannels.join(', ')}; Please check first.`;
+            } else {
+                fileCheck.textContent = '';
+            }
 
             //extract fcsArray
             let fcsArray = fcs.dataAsNumbers; 
@@ -474,6 +492,52 @@ function handleCustomFCSFileInputChange(event, fluor) {
         reader.readAsArrayBuffer(file);
     }
 }
+
+document.getElementById('use-all-channel-checkbox').addEventListener('change', function() {
+    use_all_channel = document.getElementById('use-all-channel-checkbox').checked;
+    if (use_all_channel) {
+        selected_ChannelNames = [...merged_ChannelNames];
+        document.getElementById('channels-checkbox-container').innerHTML = '';
+        document.getElementById('channels-selection-reminder').innerText = `A total of ${selected_ChannelNames.length} channels were selected.`
+    } else {
+        generateChannelCheckboxes();
+    }
+    console.log('use_all_channel:', use_all_channel);
+    console.log('selected_ChannelNames:', selected_ChannelNames);
+});
+
+function generateChannelCheckboxes(){
+    checkboxChannelsContainer = document.getElementById('channels-checkbox-container');
+    checkboxChannelsContainer.innerHTML = ''; 
+    merged_ChannelNames.forEach((channel, index) => {
+        const label = document.createElement('label');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = index;
+        checkbox.checked = true;
+        checkbox.addEventListener('change', updateSelectedChannels);
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(channel));
+        const checkboxItem = document.createElement('div');
+        checkboxItem.className = 'checkbox-item';
+        checkboxItem.appendChild(label);
+        checkboxChannelsContainer.appendChild(checkboxItem);
+    });
+}
+
+// update selected Channels
+function updateSelectedChannels() {
+    selected_ChannelNames = [];
+    const checkboxes = checkboxChannelsContainer.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        if (checkbox.checked) {
+            selected_ChannelNames.push(merged_ChannelNames[parseInt(checkbox.value)]);
+        }
+    });
+    document.getElementById('channels-selection-reminder').innerText = `A total of ${selected_ChannelNames.length} channels were selected.`
+    console.log('selected_ChannelNames:', selected_ChannelNames);
+}
+
 
 function customLog(...args) {
     const timestamp = new Date().toISOString(); // get ISO string of current time
