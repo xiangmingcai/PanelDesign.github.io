@@ -167,7 +167,7 @@ document.getElementById('generate-fluors-selection').addEventListener('click', a
     console.log('selected_ChannelNames:', selected_ChannelNames);
 
 });
-
+ 
 async function readinsidecsv(){
     
     const filePath = `data/mtx/${Instrument}.csv`;
