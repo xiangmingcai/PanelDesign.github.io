@@ -32,8 +32,10 @@ let fluor_fcs_pairs = [];
 let selected_custom_Secondary_fluors;
 let customfileInputContainer;
 let use_all_channel = true;
+let inside_fcs_fileHandle;
 
 let directoryHandle;
+let fcsdirectoryHandle;
 
 // select Instrument
 const selectInstrumentElement = document.getElementById('instrument-select');
@@ -389,7 +391,7 @@ document.getElementById('confirm-fluors-selection').addEventListener('click', as
         Primary: merged_Primary_fluors[index],
         Secondary: merged_Secondary_fluors[index],
         custom: false,
-        fcs_address: `data/fcs/${merged_Primary_fluors[index]}.fcs`,
+        fcs_address: `data/fcs/${Instrument}/${merged_Primary_fluors[index]}.fcs`,
         fcs_Array: null
         };
         fluor_fcs_pairs.push(fluor_fcs_pair);
@@ -410,23 +412,26 @@ document.getElementById('confirm-fluors-selection').addEventListener('click', as
     console.log("fluor_fcs_pairs: ",fluor_fcs_pairs);
     
     // generate file input container and read fcs from custom fluors
-    if (selected_custom_Secondary_fluors.length > 0) {
-        customfileInputContainer = document.getElementById('custom-fcs-file-input-container');
-        customfileInputContainer.innerHTML = ''; 
-        selected_custom_Secondary_fluors.forEach((fluor, index) => {
-            const fileInputLabel = document.createElement('label');
-            fileInputLabel.textContent = `Select fcs file for ${fluor}: `;
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.addEventListener('change', (event) => handleCustomFCSFileInputChange(event, fluor));
-            const fileCheck = document.createElement('p');
-            const fileInputItem = document.createElement('div');
-            fileInputItem.appendChild(fileInputLabel);
-            fileInputItem.appendChild(fileInput);
-            fileInputItem.appendChild(fileCheck);
-            customfileInputContainer.appendChild(fileInputItem);
-        });
+    if (custom_csvArray && custom_csvArray.length > 0) {
+        if (selected_custom_Secondary_fluors.length > 0) {
+            customfileInputContainer = document.getElementById('custom-fcs-file-input-container');
+            customfileInputContainer.innerHTML = ''; 
+            selected_custom_Secondary_fluors.forEach((fluor, index) => {
+                const fileInputLabel = document.createElement('label');
+                fileInputLabel.textContent = `Select fcs file for ${fluor}: `;
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.addEventListener('change', (event) => handleCustomFCSFileInputChange(event, fluor));
+                const fileCheck = document.createElement('p');
+                const fileInputItem = document.createElement('div');
+                fileInputItem.appendChild(fileInputLabel);
+                fileInputItem.appendChild(fileInput);
+                fileInputItem.appendChild(fileCheck);
+                customfileInputContainer.appendChild(fileInputItem);
+            });
+        }
     }
+    
 
     // show 
     document.getElementById('panel-evaluation-button-div').style.display = 'block';
@@ -538,6 +543,112 @@ function updateSelectedChannels() {
     console.log('selected_ChannelNames:', selected_ChannelNames);
 }
 
+document.getElementById('panel_evaluation_button').addEventListener('click', async () => {
+    //readallinsidefcs_test();
+    readallinsidefcs();
+})
+
+
+//read inside fcs
+async function readallinsidefcs(){
+    fluor_fcs_pairs.forEach(async pair => {
+        if (!pair.custom) {
+            await readinsidefcs(pair.fcs_address,pair.Primary)
+        }
+    });
+}
+
+async function readinsidefcs(fcsAddress, fluorPrimary) {
+    try {
+        const response = await fetch(fcsAddress);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch FCS file: ${response.statusText}`);
+        }
+
+        let arrayBuffer = await response.arrayBuffer();
+        customLog("arrayBuffer: ", "finished.");
+        
+        let buffer = Buffer.from(arrayBuffer);
+        arrayBuffer = null //remove arrayBuffer
+        customLog("buffer: ", "finished.");
+        
+        let fcs = new FCS({ dataFormat: 'asNumber', eventsToRead: 10000}, buffer);
+        buffer = null //remove buffer
+        console.log("fcs: ", fcs)
+
+
+    } catch (error) {
+        console.error('Error reading FCS file:', error);
+    }
+}
+
+async function readallinsidefcs_test() {
+    fcsdirectoryHandle = await window.showDirectoryPicker();
+    fluor_fcs_pairs.forEach(async pair => {
+        if (!pair.custom) {
+            await readinsidefcs_test(fcsdirectoryHandle,Instrument,pair.Primary)
+        }
+    });
+}
+async function readinsidefcs_test(fcsdirectoryHandle,Instrument,fluorPrimary) {
+    console.log(`${fluorPrimary}.fcs`);
+    for await (const entry of fcsdirectoryHandle.values()) {
+        if (entry.kind === 'file' && entry.name === `${fluorPrimary}.fcs`) {
+            inside_fcs_fileHandle = await entry.getFile();
+        }
+    }
+    console.log("inside_fcs_fileHandle: ",inside_fcs_fileHandle);
+    const file = inside_fcs_fileHandle;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        //import fcs file
+        let arrayBuffer = e.target.result;
+        customLog("arrayBuffer: ", "finished.");
+        
+        let buffer = Buffer.from(arrayBuffer);
+        arrayBuffer = null //remove arrayBuffer
+        customLog("buffer: ", "finished.");
+        
+        let fcs = new FCS({ dataFormat: 'asNumber', eventsToRead: 10000}, buffer);
+        buffer = null //remove buffer
+
+        //find columnNames
+        const text = fcs.text;
+        const columnNames = [];
+        //columnNames are stored in `$P${i}S` in Xenith
+        for (let i = 1; text[`$P${i}S`]; i++) {
+            columnNames.push(text[`$P${i}S`]);
+        }
+        //columnNames are stored in `$P${i}N` in Aurora
+        if (columnNames.length == 0) {
+            for (let i = 1; text[`$P${i}N`]; i++) {
+                columnNames.push(text[`$P${i}N`]);
+            }
+        }
+        //check if all selected_ChannelNames are in columnNames, if not, report on webpage
+        
+        const missingChannels = selected_ChannelNames.filter(name => !columnNames.includes(name));
+        if (missingChannels.length > 0) {
+            customLog(`Missing channels: ${missingChannels.join(', ')}; Please check first.`);
+        }
+
+        //extract fcsArray
+        let fcsArray = fcs.dataAsNumbers; 
+        fcs = null;
+
+        let rowIndices = selected_ChannelNames.map(name => columnNames.indexOf(name));
+        fcsArray = fcsArray.map(row => rowIndices.map(index => row[index]));
+        fcsArray = transpose(fcsArray);
+
+        //store fcsArray in fluor_fcs_pairs
+        const pairIndex = fluor_fcs_pairs.findIndex(pair => pair.Primary === fluorPrimary);
+        if (pairIndex !== -1) {
+            fluor_fcs_pairs[pairIndex].fcs_Array = fcsArray;
+            console.log("updated fluor_fcs_pairs: ",fluor_fcs_pairs);
+        }
+    }
+    reader.readAsArrayBuffer(file);
+}
 
 function customLog(...args) {
     const timestamp = new Date().toISOString(); // get ISO string of current time
