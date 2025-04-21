@@ -106,8 +106,8 @@ document.getElementById('generate-fluors-selection').addEventListener('click', a
         }
     } else {
         //read inside unmixing matrix file
-        //await readinsidecsv(); //for official use
-        await readinsidecsv_test(); //for local test
+        await readinsidecsv(); //for official use
+        //await readinsidecsv_test(); //for local test
 
         //compare inside and custom matrix files
         if (custom_csvArray && custom_csvArray.length > 0) {
@@ -548,8 +548,6 @@ document.getElementById('panel_evaluation_button').addEventListener('click', asy
     readallinsidefcs();
 })
 
-
-
 //read inside fcs
 async function readallinsidefcs(){
     fluor_fcs_pairs.forEach(async pair => {
@@ -575,7 +573,41 @@ async function readinsidefcs(fcsAddress, fluorPrimary) {
         
         let fcs = new FCS({ dataFormat: 'asNumber', eventsToRead: 10000}, buffer);
         buffer = null //remove buffer
-        console.log("fcs: ", fcs)
+        
+        //find columnNames
+        const text = fcs.text;
+        const columnNames = [];
+        //columnNames are stored in `$P${i}S` in Xenith
+        for (let i = 1; text[`$P${i}S`]; i++) {
+            columnNames.push(text[`$P${i}S`]);
+        }
+        //columnNames are stored in `$P${i}N` in Aurora
+        if (columnNames.length == 0) {
+            for (let i = 1; text[`$P${i}N`]; i++) {
+                columnNames.push(text[`$P${i}N`]);
+            }
+        }
+        //check if all selected_ChannelNames are in columnNames, if not, report on webpage
+        
+        const missingChannels = selected_ChannelNames.filter(name => !columnNames.includes(name));
+        if (missingChannels.length > 0) {
+            customLog(`Missing channels: ${missingChannels.join(', ')}; Please check first.`);
+        }
+
+        //extract fcsArray
+        let fcsArray = fcs.dataAsNumbers; 
+        fcs = null;
+
+        let rowIndices = selected_ChannelNames.map(name => columnNames.indexOf(name));
+        fcsArray = fcsArray.map(row => rowIndices.map(index => row[index]));
+        fcsArray = transpose(fcsArray);
+
+        //store fcsArray in fluor_fcs_pairs
+        const pairIndex = fluor_fcs_pairs.findIndex(pair => pair.Primary === fluorPrimary);
+        if (pairIndex !== -1) {
+            fluor_fcs_pairs[pairIndex].fcs_Array = fcsArray;
+            console.log("updated fluor_fcs_pairs: ",fluor_fcs_pairs);
+        }
 
 
     } catch (error) {
