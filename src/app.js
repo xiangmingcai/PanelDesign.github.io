@@ -208,57 +208,6 @@ async function readinsidecsv(){
     }
 }
 
-//for local test
-async function readinsidecsv_test(){
-    directoryHandle = await window.showDirectoryPicker();
-    for await (const entry of directoryHandle.values()) {
-        if (entry.kind === 'file' && entry.name === `${Instrument}.csv`) {
-            inside_unmixing_mtx_fileHandle = await entry.getFile();
-        }
-    }
-
-    try {
-        if (!inside_unmixing_mtx_fileHandle) {
-            alert('Please select a file first.');
-            return;
-        }
-
-        // Read the file
-        const text = await inside_unmixing_mtx_fileHandle.text();
-        
-        // Parse CSV content using PapaParse
-        Papa.parse(text, {
-            header: true,
-            complete: function(results) {
-                inside_csvArray = results.data;
-                // check if last row is empty
-                if (inside_csvArray.length > 0 && Object.values(inside_csvArray[inside_csvArray.length - 1]).every(value => value === "")) {
-                    inside_csvArray.pop(); // remove last row
-                }
-                console.log('inside_csvArray:', inside_csvArray);
-                customLog('inside_csvArray:', inside_csvArray);
-                inside_ChannelNames = results.meta.fields;
-                inside_ChannelNames = inside_ChannelNames.slice(2);
-                console.log('inside_ChannelNames:', inside_ChannelNames);
-                customLog('inside_ChannelNames:', inside_ChannelNames);
-                inside_Primary_fluors = inside_csvArray.map(item => item.Primary)
-                inside_Secondary_fluors = inside_csvArray.map(item => item.Secondary)
-                console.log('inside_Primary_fluors:', inside_Primary_fluors);
-                customLog('inside_Primary_fluors:', inside_Primary_fluors);
-                console.log('inside_Secondary_fluors:', inside_Secondary_fluors);
-                customLog('inside_Secondary_fluors:', inside_Secondary_fluors);
-                
-            },
-            error: function(error) {
-                console.error('Error parsing CSV:', error);
-            }
-        });
-
-    } catch (error) {
-        console.error('Error reading CSV file:', error);
-        customLog('Error reading CSV file:', error);
-    }
-}
 
 async function readcustomcsv(){
     try {
