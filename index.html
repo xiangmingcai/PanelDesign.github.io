@@ -75,31 +75,33 @@
             </div>
         </div>
 
-    
         <!-- fcs file match, if Custom instrument or added Custom unmixing matrix-->
-        <div>
+        <div id="fcs-file-match-div" style="display:none;">
+            <p>Since you selected some custom fluors, please provide corresponding fcs files here.</p>
             <div class="fcs-file-input-container" id="custom-fcs-file-input-container">
             </div>
-            
         </div>
-
-        
-
 
     </div>
     <!-- Step 2 Evaluate panel-->
     <div class="basic-div">
         <h2>Panel Evaluation</h2>
-        <div id="panel-evaluation-button-div" style="display:block;">
+        <div id="panel-evaluation-button-div" style="display:none;">
             <button id="panel_evaluation_button">Evaluate the panel!</button>
         </div>
-        <div>
-
-        </div>
         
+        <div id="line-plot-div"></div>
+        <div id="similarity-matrix-div"></div>
+
+        <div id="progress-container" style="display:none;">
+            <p>Calculating Spillover Spreading Matrix</p>
+            <div id="progress-bar">0%</div>
+        </div>
+        <div id="ssm-plot-div"></div>        
+        
+        <div id="complexity-plot-div"></div>        
     </div>
     
-
  
     <br>
     <br>
