@@ -892,9 +892,9 @@ function ssmPlot(elementID) {
 }
 
 function scatterplot(elementID,pos_SecondaryFluor,ref_SecondaryFluor) {
-    //find indice of pos_SecondaryFluor
-    let pos_indice = selected_Secondary_fluors.indexOf(pos_SecondaryFluor);
-    let ref_indice = selected_Secondary_fluors.indexOf(ref_SecondaryFluor);
+    //find indice of pos_SecondaryFluor; somehow shouold be switched
+    let pos_indice = selected_Secondary_fluors.indexOf(ref_SecondaryFluor);
+    let ref_indice = selected_Secondary_fluors.indexOf(pos_SecondaryFluor);
     //document.getElementById('ssm-reminder2').innerText = 'ref_indice:' + ref_indice + ', pos_indice: ' + pos_indice;
 
     // unmix
@@ -1003,11 +1003,11 @@ function devidepopulation(fluor_pos_indice, unmixed_array) {
 function showcalculateSSMIndexprocess(fluor_pos_indice, fluor_neg_indice, unstained_array, stained_array) {
     if (fluor_pos_indice === fluor_neg_indice) {
         document.getElementById("ssm-delta_neg_stained-reminder").innerText = `Delta_negAxis_stainedPopulation (84%-50%): NA ;`;
-            document.getElementById("ssm-delta_neg_unstained-reminder").innerText = `Delta_negAxis_unstainedPopulation (84%-50%): NA ;`;
-            document.getElementById("ssm-delta_neg-reminder").innerText = `Delta_negAxis (sqrt((Delta_negAxis_stainedPopulation^2) - (Delta_negAxis_unstainedPopulation^2))): NA ;`;
-            document.getElementById("ssm-delta_pos_dif-reminder").innerText = `Delta_posAxis_dif (50%-50%): NA ;`;
-            document.getElementById("ssm-delta_pos-reminder").innerText = `Delta_posAxis (sqrt(Delta_posAxis_dif)): NA ;`;
-            document.getElementById("ssm-SSindex-reminder").innerText = `SSindex (Delta_negAxis / Delta_posAxis): 0 ;`;
+        document.getElementById("ssm-delta_neg_unstained-reminder").innerText = `Delta_negAxis_unstainedPopulation (84%-50%): NA ;`;
+        document.getElementById("ssm-delta_neg-reminder").innerText = `Delta_negAxis (sqrt((Delta_negAxis_stainedPopulation^2) - (Delta_negAxis_unstainedPopulation^2))): NA ;`;
+        document.getElementById("ssm-delta_pos_dif-reminder").innerText = `Delta_posAxis_dif (50%-50%): NA ;`;
+        document.getElementById("ssm-delta_pos-reminder").innerText = `Delta_posAxis (sqrt(Delta_posAxis_dif)): NA ;`;
+        document.getElementById("ssm-SSindex-reminder").innerText = `SSindex (Delta_negAxis / Delta_posAxis): 0 ;`;
     } else {
         //step 3 calculate ssm index
         let delta_neg_unstained = quantileSeq(unstained_array[fluor_neg_indice],0.84) - quantileSeq(unstained_array[fluor_neg_indice],0.5);
