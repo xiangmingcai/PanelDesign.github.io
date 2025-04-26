@@ -872,12 +872,82 @@ function ssmPlot(elementID) {
 
             //hide progress-container
             document.getElementById("progress-container").style.display = 'none';
+
+            // add click event
+            
+            let heatmap = document.getElementById(elementID);
+            heatmap.on('plotly_click', function(data){
+                var x = data.points[0].x;
+                var y = data.points[0].y;
+                document.getElementById('ssm-reminder').innerText = 'row(ref):' + y + ', col(pos): ' + x;
+                scatterplot("ssm-scatter-div",x,y)
+            });
+            
+
+
+
         }
     }
     requestAnimationFrame(calculateSSM);
 }
 
+function scatterplot(elementID,pos_SecondaryFluor,ref_SecondaryFluor) {
+    //find indice of pos_SecondaryFluor
+    let pos_indice = selected_Secondary_fluors.indexOf(pos_SecondaryFluor);
+    let ref_indice = selected_Secondary_fluors.indexOf(ref_SecondaryFluor);
+    //document.getElementById('ssm-reminder2').innerText = 'ref_indice:' + ref_indice + ', pos_indice: ' + pos_indice;
+
+    // unmix
+    let raw_array = fluor_fcs_pairs[pos_indice].fcs_Array; 
+    let unmixed_array = unmix(raw_array, unmixingMethod);
+
+    let devidedpopulations = devidepopulation(pos_indice, unmixed_array);
+    let unstained_array = devidedpopulations.unstained_array;
+    let stained_array = devidedpopulations.stained_array;
+
+
+    unstained_array = transpose(unstained_array);
+    stained_array = transpose(stained_array);
+    console.log("unstained_array: ", unstained_array);
+    console.log("stained_array: ", stained_array);
+
+    //scatter plot
+    //var x_data = unmixed_array.map(row => row[pos_indice]);
+    //var y_data = unmixed_array.map(row => row[ref_indice]);
+    //x_data = dotMultiply(sign(x_data),log10(add(abs(x_data),1)))
+    //y_data = dotMultiply(sign(y_data),log10(add(abs(y_data),1)))
+
+    // plot
+    var traceA = {
+        x: stained_array.map(row => row[pos_indice]),
+        y: stained_array.map(row => row[ref_indice]),
+        mode: 'markers',
+        type: 'scatter',
+        name: 'Stained',
+        marker: { color: 'blue' }
+    };
+
+    var traceB = {
+        x: unstained_array.map(row => row[pos_indice]),
+        y: unstained_array.map(row => row[ref_indice]),
+        mode: 'markers',
+        type: 'scatter',
+        name: 'Unstained',
+        marker: { color: 'gray' }
+    };
     
+    var layout = {
+        title: {text: 'Scatter Plot'},
+        xaxis: { title: {text: pos_SecondaryFluor }},
+        yaxis: { title: {text: ref_SecondaryFluor }}
+    };
+
+    var data = [traceA, traceB];
+
+    Plotly.newPlot(elementID, data, layout);
+
+
+}
 
     
 
