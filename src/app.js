@@ -906,11 +906,14 @@ function scatterplot(elementID,pos_SecondaryFluor,ref_SecondaryFluor) {
     let stained_array = devidedpopulations.stained_array;
 
 
+    showcalculateSSMIndexprocess(pos_indice, ref_indice, unstained_array, stained_array)
+
     unstained_array = transpose(unstained_array);
     stained_array = transpose(stained_array);
     console.log("unstained_array: ", unstained_array);
     console.log("stained_array: ", stained_array);
 
+    
     //scatter plot
     //var x_data = unmixed_array.map(row => row[pos_indice]);
     //var y_data = unmixed_array.map(row => row[ref_indice]);
@@ -997,7 +1000,43 @@ function devidepopulation(fluor_pos_indice, unmixed_array) {
     stained_array = transpose(stained_array)
     return {unstained_array: unstained_array, stained_array: stained_array}
 }
+function showcalculateSSMIndexprocess(fluor_pos_indice, fluor_neg_indice, unstained_array, stained_array) {
+    if (fluor_pos_indice === fluor_neg_indice) {
+        document.getElementById("ssm-delta_neg_stained-reminder").innerText = `Delta_negAxis_stainedPopulation (84%-50%): NA ;`;
+            document.getElementById("ssm-delta_neg_unstained-reminder").innerText = `Delta_negAxis_unstainedPopulation (84%-50%): NA ;`;
+            document.getElementById("ssm-delta_neg-reminder").innerText = `Delta_negAxis (sqrt((Delta_negAxis_stainedPopulation^2) - (Delta_negAxis_unstainedPopulation^2))): NA ;`;
+            document.getElementById("ssm-delta_pos_dif-reminder").innerText = `Delta_posAxis_dif (50%-50%): NA ;`;
+            document.getElementById("ssm-delta_pos-reminder").innerText = `Delta_posAxis (sqrt(Delta_posAxis_dif)): NA ;`;
+            document.getElementById("ssm-SSindex-reminder").innerText = `SSindex (Delta_negAxis / Delta_posAxis): 0 ;`;
+    } else {
+        //step 3 calculate ssm index
+        let delta_neg_unstained = quantileSeq(unstained_array[fluor_neg_indice],0.84) - quantileSeq(unstained_array[fluor_neg_indice],0.5);
+        let delta_neg_stained = quantileSeq(stained_array[fluor_neg_indice],0.84) - quantileSeq(stained_array[fluor_neg_indice],0.5);
+        if (delta_neg_unstained >= delta_neg_stained){
 
+            document.getElementById("ssm-delta_neg_stained-reminder").innerText = `Delta_negAxis_stainedPopulation (84%-50%): ${delta_neg_stained} ;`;
+            document.getElementById("ssm-delta_neg_unstained-reminder").innerText = `Delta_negAxis_unstainedPopulation (84%-50%): ${delta_neg_unstained} ;`;
+            document.getElementById("ssm-delta_neg-reminder").innerText = `Delta_negAxis (sqrt((Delta_negAxis_stainedPopulation^2) - (Delta_negAxis_unstainedPopulation^2))): NA ;`;
+            document.getElementById("ssm-delta_pos_dif-reminder").innerText = `Delta_posAxis_dif (50%-50%): NA ;`;
+            document.getElementById("ssm-delta_pos-reminder").innerText = `Delta_posAxis (sqrt(Delta_posAxis_dif)): NA ;`;
+            document.getElementById("ssm-SSindex-reminder").innerText = `SSindex (Delta_negAxis / Delta_posAxis): NA ;`;
+
+        } else {
+            let delta_neg = sqrt((delta_neg_stained ** 2) - (delta_neg_unstained ** 2));
+            let delta_pos_dif = quantileSeq(stained_array[fluor_pos_indice],0.5) - quantileSeq(unstained_array[fluor_pos_indice],0.5)
+            let delta_pos = sqrt(delta_pos_dif);
+            let SSindex =  delta_neg / delta_pos;
+            
+            document.getElementById("ssm-delta_neg_stained-reminder").innerText = `Delta_negAxis_stainedPopulation (84%-50%): ${delta_neg_stained} ;`;
+            document.getElementById("ssm-delta_neg_unstained-reminder").innerText = `Delta_negAxis_unstainedPopulation (84%-50%): ${delta_neg_unstained} ;`;
+            document.getElementById("ssm-delta_neg-reminder").innerText = `Delta_negAxis (sqrt((Delta_negAxis_stainedPopulation^2) - (Delta_negAxis_unstainedPopulation^2))): ${delta_neg} ;`;
+            document.getElementById("ssm-delta_pos_dif-reminder").innerText = `Delta_posAxis_dif (50%-50%): ${delta_pos_dif} ;`;
+            document.getElementById("ssm-delta_pos-reminder").innerText = `Delta_posAxis (sqrt(Delta_posAxis_dif)): ${delta_pos} ;`;
+            document.getElementById("ssm-SSindex-reminder").innerText = `SSindex (Delta_negAxis / Delta_posAxis): ${SSindex} ;`;
+
+        }
+    }   
+}
 function calculateSSMIndex(fluor_pos_indice, fluor_neg_indice, unstained_array, stained_array) {
     if (fluor_pos_indice === fluor_neg_indice) {
         let SSindex =  0;
